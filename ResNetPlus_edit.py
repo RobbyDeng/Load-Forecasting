@@ -23,8 +23,6 @@ import pandas as pd
 parse_dates = ['date']
 df = pd.read_csv('data.csv', parse_dates=parse_dates, index_col='date')
 
-# 测试读取成功
-print(df.columns)
 
 # 1. get the maximum and minimum demands in 0-24 clock intervals
 # 2. get the daily demand and temperature values

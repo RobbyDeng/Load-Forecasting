@@ -570,8 +570,15 @@ if TRAIN:
         pred_3 = model.predict(X_test_pred)
         pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
 
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3])
-        history_list.append([history_1, history_2, history_3])
+        history_4 = model.fit(X_train_fit, Y_train_fit, \
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3,pred_eval_4])
+        history_list.append([history_1, history_2, history_3,history_4])
 
     with h5py.File('results.h5', 'w') as h5f:
         h5f.create_dataset('pred_list', data=pred_list)

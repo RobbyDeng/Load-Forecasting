@@ -12,7 +12,7 @@
 # load original data file
 # modification of the data loading procedure is needed if you have your own dataset
 # In this case, we use our own dataset 'data.csv', which contains the data from
-# 1988/1/1 to 1992/10/12
+# 1988/1/1 to 1992/9/30
 
 import h5py
 import matplotlib.pyplot as plt
@@ -23,6 +23,8 @@ import pandas as pd
 parse_dates = ['date']
 df = pd.read_csv('data.csv', parse_dates=parse_dates, index_col='date')
 
+# 测试读取成功
+print(df.columns)
 
 # 1. get the maximum and minimum demands in 0-24 clock intervals
 # 2. get the daily demand and temperature values
@@ -43,12 +45,12 @@ for i in range(len(D)):
     D_min[i] = D_min_daily[n_day]
 
 # normalization based on peak values
-D_max = D_max / 24000.
-D_min = D_min / 24000.
-D = D / 24000.
+# max demand = 4635
+# max temperature = 98
+D_max = D_max / 5000.
+D_min = D_min / 5000.
+D = D / 5000.
 T = T / 100.
-
-print(D_max_daily)
 
 # add weekday info to the dataset
 # the initial value for iter_weekday corresponds to the first day of the dataset
@@ -69,7 +71,7 @@ for i in range(1747):
 import datetime
 
 # the length of the train dataset is 1016, the first date is 1988/1/1
-# the length of the test dataset is 731
+# the length of the test dataset is
 # there are 1747 days in the dataset
 iter_date = datetime.date(1988, 1, 1)
 season = np.zeros((24 * 1747,))
@@ -95,7 +97,8 @@ for i in range(1747):
         # we only consider Independence day, Thanksgiving Day and Christmas Eve
         if (month == 7) and (day == 4):
             festival[i * 24 + j] = 1
-        if (month == 11) and (iter_date.weekday() == 4) and (day + 7 > 30):
+        #weekday()函数的返回值0-6 分别对应周一到周日 感恩节是11月的第四个星期四，所以weekday的返回值为5
+        if (month == 11) and (iter_date.weekday() == 5) and (day + 7 > 30):
             festival[i * 24 + j] = 1
         if (month == 12) and (day == 24):
             festival[i * 24 + j] = 1
@@ -122,11 +125,11 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
     y = []
 
     len_dataset = D.shape[0]
-    num_sample = len_dataset
+    num_sample = len_dataset-2016
     # 2016 hours (28*3 days) is needed so that we can formulate the first datapoint
     # with the North American Utility Dataset 1988/1/1 is already the first datapoint
 
-    for i in range(len_dataset):
+    for i in range(2016,len_dataset):
         # the demand values of the most recent 24 hours
         x_1.append(D[i - 24:i])
 
@@ -192,7 +195,10 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
     # we prepare 24 sets of data for the 24 sub-networks, each sub-network is aimed at forecasting the load of one hour of the next day
     for i in range(24):
         #               0                          1                         2                         3                         4                         5                         6                         7                    8                    9                    10                          11                           12
-        X_train.append([X_1[i:num_train:24, :24 - i], X_21_D[i:num_train:24, :], X_21_T[i:num_train:24, :],X_22_D[i:num_train:24, :],X_22_T[i:num_train:24, :], X_23_D[i:num_train:24, :], X_23_T[i:num_train:24, :], X_3[i:num_train:24], X_4[i:num_train:24], X_5[i:num_train:24],X_season[i:num_train:24, :], X_weekday[i:num_train:24, :], X_festival[i:num_train:24, :]])
+        X_train.append([X_1[i:num_train:24, :24 - i], X_21_D[i:num_train:24, :], X_21_T[i:num_train:24, :],\
+                        X_22_D[i:num_train:24, :], X_22_T[i:num_train:24, :], X_23_D[i:num_train:24, :],\
+                        X_23_T[i:num_train:24, :], X_3[i:num_train:24], X_4[i:num_train:24], X_5[i:num_train:24],\
+                        X_season[i:num_train:24, :], X_weekday[i:num_train:24, :], X_festival[i:num_train:24, :]])
         X_val.append(
             [X_1[num_train - num_val + i:num_train:24, :24 - i], X_21_D[num_train - num_val + i:num_train:24, :],\
              X_21_T[num_train - num_val + i:num_train:24, :], X_22_D[num_train - num_val + i:num_train:24, :],\
@@ -215,15 +221,25 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
     return (X_train, X_val, X_test, Y_train, Y_val, Y_test)
 
 
-# num_pre_days: the number of days we need before we can get the first sample, in this case: 3*28 days ？？
-num_pre_days = 0
+# num_pre_days: the number of days we need before we can get the first sample, in this case: 3*28 days
+num_pre_days = 84
 num_days = 1747
 num_test_days = 731
-num_train_days = 1016
+num_train_days = 932
 num_data_points = num_days * 24
 num_days_start = num_days - num_pre_days - num_test_days - num_train_days
 start_data_point = num_days_start * 24
-X_train, X_val, X_test, Y_train, Y_val, Y_test = data_split(D[start_data_point: start_data_point + num_data_points],T[start_data_point: start_data_point + num_data_points], D_max[start_data_point: start_data_point + num_data_points],D_min[start_data_point: start_data_point + num_data_points],season[start_data_point: start_data_point + num_data_points],weekday[start_data_point: start_data_point + num_data_points],festival[start_data_point: start_data_point + num_data_points],num_train_days, 0.1)
+X_train, X_val, X_test, Y_train, Y_val, Y_test = data_split(D[start_data_point: start_data_point + num_data_points],
+                                                            T[start_data_point: start_data_point + num_data_points],
+                                                            D_max[start_data_point: start_data_point + num_data_points],
+                                                            D_min[start_data_point: start_data_point + num_data_points],
+                                                            season[
+                                                            start_data_point: start_data_point + num_data_points],
+                                                            weekday[
+                                                            start_data_point: start_data_point + num_data_points],
+                                                            festival[
+                                                            start_data_point: start_data_point + num_data_points],
+                                                            num_train_days, 0.1)
 
 ## ----------------------------------------------------------------------------
 # define the model
@@ -287,7 +303,8 @@ input_weekday = Input(shape=(2,), name='input_weekday')
 input_festival = Input(shape=(2,), name='input_festival')
 
 
-def get_basic_structure(hour, input_Dd, input_Dw, input_Dm, input_Dr, input_Td, input_Tw, input_Tm, input_T,output_pre=[]):
+def get_basic_structure(hour, input_Dd, input_Dw, input_Dm, input_Dr, input_Td, input_Tw, input_Tm, input_T,
+                        output_pre=[]):
     '''
     get the module with the basic structure.
     output_pre is used to replace the recent 24-hour inputs with the outputs of basic-structure modules of previous hours.
@@ -322,64 +339,66 @@ def get_basic_structure(hour, input_Dd, input_Dw, input_Dm, input_Dr, input_Td, 
     else:
         concat_Dr = concatenate([input_Dr] + output_pre)
         dense_Dr = Dense(num_dense, activation='selu', kernel_initializer='lecun_normal')(concat_Dr)
-    dense_FC1 = Dense(num_dense, activation='selu', kernel_initializer='lecun_normal')(concatenate([dense_Dr, dense_concat_date_info_2]))
+    dense_FC1 = Dense(num_dense, activation='selu', kernel_initializer='lecun_normal')(
+        concatenate([dense_Dr, dense_concat_date_info_2]))
 
     concat = concatenate([dense_FC2, dense_FC1, input_T])
     dense_pre_output = Dense(num_dense, activation='selu', kernel_initializer='lecun_normal')(concat)
 
-    output = Dense(1, activation='linear', name='output' + str(hour), kernel_initializer='lecun_normal')(dense_pre_output)
+    output = Dense(1, activation='linear', name='output' + str(hour), kernel_initializer='lecun_normal')(
+        dense_pre_output)
 
     output_pre_new = output_pre + [output]
     return (output, output_pre_new)
 
 
-output1, output_pre1 = get_basic_structure(1, input1_Dd, input1_Dw, input1_Dm, input1_Dr, input1_Td, input1_Tw,\
+output1, output_pre1 = get_basic_structure(1, input1_Dd, input1_Dw, input1_Dm, input1_Dr, input1_Td, input1_Tw,
                                            input1_Tm, input1_T)
-output2, output_pre2 = get_basic_structure(2, input2_Dd, input2_Dw, input2_Dm, input2_Dr, input2_Td, input2_Tw,\
+output2, output_pre2 = get_basic_structure(2, input2_Dd, input2_Dw, input2_Dm, input2_Dr, input2_Td, input2_Tw,
                                            input2_Tm, input2_T, output_pre1)
-output3, output_pre3 = get_basic_structure(3, input3_Dd, input3_Dw, input3_Dm, input3_Dr, input3_Td, input3_Tw,\
+output3, output_pre3 = get_basic_structure(3, input3_Dd, input3_Dw, input3_Dm, input3_Dr, input3_Td, input3_Tw,
                                            input3_Tm, input3_T, output_pre2)
-output4, output_pre4 = get_basic_structure(4, input4_Dd, input4_Dw, input4_Dm, input4_Dr, input4_Td, input4_Tw,\
+output4, output_pre4 = get_basic_structure(4, input4_Dd, input4_Dw, input4_Dm, input4_Dr, input4_Td, input4_Tw,
                                            input4_Tm, input4_T, output_pre3)
-output5, output_pre5 = get_basic_structure(5, input5_Dd, input5_Dw, input5_Dm, input5_Dr, input5_Td, input5_Tw,\
+output5, output_pre5 = get_basic_structure(5, input5_Dd, input5_Dw, input5_Dm, input5_Dr, input5_Td, input5_Tw,
                                            input5_Tm, input5_T, output_pre4)
-output6, output_pre6 = get_basic_structure(6, input6_Dd, input6_Dw, input6_Dm, input6_Dr, input6_Td, input6_Tw,\
+output6, output_pre6 = get_basic_structure(6, input6_Dd, input6_Dw, input6_Dm, input6_Dr, input6_Td, input6_Tw,
                                            input6_Tm, input6_T, output_pre5)
-output7, output_pre7 = get_basic_structure(7, input7_Dd, input7_Dw, input7_Dm, input7_Dr, input7_Td, input7_Tw,\
+output7, output_pre7 = get_basic_structure(7, input7_Dd, input7_Dw, input7_Dm, input7_Dr, input7_Td, input7_Tw,
                                            input7_Tm, input7_T, output_pre6)
-output8, output_pre8 = get_basic_structure(8, input8_Dd, input8_Dw, input8_Dm, input8_Dr, input8_Td, input8_Tw,\
+output8, output_pre8 = get_basic_structure(8, input8_Dd, input8_Dw, input8_Dm, input8_Dr, input8_Td, input8_Tw,
                                            input8_Tm, input8_T, output_pre7)
-output9, output_pre9 = get_basic_structure(9, input9_Dd, input9_Dw, input9_Dm, input9_Dr, input9_Td, input9_Tw,\
+output9, output_pre9 = get_basic_structure(9, input9_Dd, input9_Dw, input9_Dm, input9_Dr, input9_Td, input9_Tw,
                                            input9_Tm, input9_T, output_pre8)
-output10, output_pre10 = get_basic_structure(10, input10_Dd, input10_Dw, input10_Dm, input10_Dr, input10_Td, input10_Tw,\
+output10, output_pre10 = get_basic_structure(10, input10_Dd, input10_Dw, input10_Dm, input10_Dr, input10_Td, input10_Tw,
                                              input10_Tm, input10_T, output_pre9)
-output11, output_pre11 = get_basic_structure(11, input11_Dd, input11_Dw, input11_Dm, input11_Dr, input11_Td, input11_Tw,\
+output11, output_pre11 = get_basic_structure(11, input11_Dd, input11_Dw, input11_Dm, input11_Dr, input11_Td, input11_Tw,
                                              input11_Tm, input11_T, output_pre10)
-output12, output_pre12 = get_basic_structure(12, input12_Dd, input12_Dw, input12_Dm, input12_Dr, input12_Td, input12_Tw,\
+output12, output_pre12 = get_basic_structure(12, input12_Dd, input12_Dw, input12_Dm, input12_Dr, input12_Td, input12_Tw,
                                              input12_Tm, input12_T, output_pre11)
-output13, output_pre13 = get_basic_structure(13, input13_Dd, input13_Dw, input13_Dm, input13_Dr, input13_Td, input13_Tw,\
+output13, output_pre13 = get_basic_structure(13, input13_Dd, input13_Dw, input13_Dm, input13_Dr, input13_Td, input13_Tw,
                                              input13_Tm, input13_T, output_pre12)
-output14, output_pre14 = get_basic_structure(14, input14_Dd, input14_Dw, input14_Dm, input14_Dr, input14_Td, input14_Tw,\
+output14, output_pre14 = get_basic_structure(14, input14_Dd, input14_Dw, input14_Dm, input14_Dr, input14_Td, input14_Tw,
                                              input14_Tm, input14_T, output_pre13)
-output15, output_pre15 = get_basic_structure(15, input15_Dd, input15_Dw, input15_Dm, input15_Dr, input15_Td, input15_Tw,\
+output15, output_pre15 = get_basic_structure(15, input15_Dd, input15_Dw, input15_Dm, input15_Dr, input15_Td, input15_Tw,
                                              input15_Tm, input15_T, output_pre14)
-output16, output_pre16 = get_basic_structure(16, input16_Dd, input16_Dw, input16_Dm, input16_Dr, input16_Td, input16_Tw,\
+output16, output_pre16 = get_basic_structure(16, input16_Dd, input16_Dw, input16_Dm, input16_Dr, input16_Td, input16_Tw,
                                              input16_Tm, input16_T, output_pre15)
-output17, output_pre17 = get_basic_structure(17, input17_Dd, input17_Dw, input17_Dm, input17_Dr, input17_Td, input17_Tw,\
+output17, output_pre17 = get_basic_structure(17, input17_Dd, input17_Dw, input17_Dm, input17_Dr, input17_Td, input17_Tw,
                                              input17_Tm, input17_T, output_pre16)
-output18, output_pre18 = get_basic_structure(18, input18_Dd, input18_Dw, input18_Dm, input18_Dr, input18_Td, input18_Tw,\
+output18, output_pre18 = get_basic_structure(18, input18_Dd, input18_Dw, input18_Dm, input18_Dr, input18_Td, input18_Tw,
                                              input18_Tm, input18_T, output_pre17)
-output19, output_pre19 = get_basic_structure(19, input19_Dd, input19_Dw, input19_Dm, input19_Dr, input19_Td, input19_Tw,\
+output19, output_pre19 = get_basic_structure(19, input19_Dd, input19_Dw, input19_Dm, input19_Dr, input19_Td, input19_Tw,
                                              input19_Tm, input19_T, output_pre18)
-output20, output_pre20 = get_basic_structure(20, input20_Dd, input20_Dw, input20_Dm, input20_Dr, input20_Td, input20_Tw,\
+output20, output_pre20 = get_basic_structure(20, input20_Dd, input20_Dw, input20_Dm, input20_Dr, input20_Td, input20_Tw,
                                              input20_Tm, input20_T, output_pre19)
-output21, output_pre21 = get_basic_structure(21, input21_Dd, input21_Dw, input21_Dm, input21_Dr, input21_Td, input21_Tw,\
+output21, output_pre21 = get_basic_structure(21, input21_Dd, input21_Dw, input21_Dm, input21_Dr, input21_Td, input21_Tw,
                                              input21_Tm, input21_T, output_pre20)
-output22, output_pre22 = get_basic_structure(22, input22_Dd, input22_Dw, input22_Dm, input22_Dr, input22_Td, input22_Tw,\
+output22, output_pre22 = get_basic_structure(22, input22_Dd, input22_Dw, input22_Dm, input22_Dr, input22_Td, input22_Tw,
                                              input22_Tm, input22_T, output_pre21)
-output23, output_pre23 = get_basic_structure(23, input23_Dd, input23_Dw, input23_Dm, input23_Dr, input23_Td, input23_Tw,\
+output23, output_pre23 = get_basic_structure(23, input23_Dd, input23_Dw, input23_Dm, input23_Dr, input23_Td, input23_Tw,
                                              input23_Tm, input23_T, output_pre22)
-output24, output_pre24 = get_basic_structure(24, input24_Dd, input24_Dw, input24_Dm, input24_Dr, input24_Td, input24_Tw,\
+output24, output_pre24 = get_basic_structure(24, input24_Dd, input24_Dw, input24_Dm, input24_Dr, input24_Td, input24_Tw,
                                              input24_Tm, input24_T, output_pre23)
 
 
@@ -518,7 +537,7 @@ def shuffle_weights(model, weights=None):
     model.set_weights(weights)
 
 
-NUM_REPEAT = 8
+NUM_REPEAT = 5
 NUM_SNAPSHOTS = 4
 NUM_TEST_DAYS = 731
 
@@ -613,14 +632,14 @@ if VAL:
     val_loss_up = val_loss_mean + val_loss_std
     val_loss_down = val_loss_mean - val_loss_std
 
-    x = range(700)
+    x = range(1350)
 
     plt.figure(figsize=(5, 4))
     plt.plot(x, loss_mean, color='Green')
     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
     plt.plot(val_loss_mean, color='RoyalBlue')
     plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
-    plt.axis([200, 700, 1, 2.5])
+    plt.axis([800, 1350, 1, 2.5])
     plt.show()
 else:
 
@@ -645,10 +664,10 @@ else:
     loss_up = loss_mean + loss_std
     loss_down = loss_mean - loss_std
 
-    x = range(700)
+    x = range(1350)
 
     plt.figure(figsize=(5, 4))
     plt.plot(x, loss_mean, color='Green')
     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-    plt.axis([200, 700, 1, 2.5])
+    plt.axis([800, 1350, 1, 2.5])
     plt.show()

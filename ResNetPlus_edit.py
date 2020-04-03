@@ -12,7 +12,7 @@
 # load original data file
 # modification of the data loading procedure is needed if you have your own dataset
 # In this case, we use our own dataset 'data.csv', which contains the data from
-# 1988/1/1 to 1992/9/30
+# 1988/1/1 to 1992/10/12
 
 import h5py
 import matplotlib.pyplot as plt
@@ -634,12 +634,12 @@ if VAL:
 
     x = range(1350)
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(6, 4))
     plt.plot(x, loss_mean, color='Green')
     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
     plt.plot(val_loss_mean, color='RoyalBlue')
     plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
-    plt.axis([800, 1350, 1, 2.5])
+    plt.axis([200, 1350, 1, 2.5])
     plt.show()
 else:
 
@@ -666,8 +666,8 @@ else:
 
     x = range(1350)
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(6, 4))
     plt.plot(x, loss_mean, color='Green')
     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-    plt.axis([800, 1350, 1, 2.5])
+    plt.axis([200, 1350, 1, 2.5])
     plt.show()

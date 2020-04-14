@@ -23,8 +23,6 @@ import pandas as pd
 parse_dates = ['date']
 df = pd.read_csv('data.csv', parse_dates=parse_dates, index_col='date')
 
-# 测试读取成功
-print(df.columns)
 
 # 1. get the maximum and minimum demands in 0-24 clock intervals
 # 2. get the daily demand and temperature values
@@ -125,11 +123,10 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
     y = []
 
     len_dataset = D.shape[0]
-    num_sample = len_dataset-2016
+    num_sample = len_dataset - 4032
     # 2016 hours (28*3 days) is needed so that we can formulate the first datapoint
-    # with the North American Utility Dataset 1988/1/1 is already the first datapoint
 
-    for i in range(2016,len_dataset):
+    for i in range(4032, len_dataset):
         # the demand values of the most recent 24 hours
         x_1.append(D[i - 24:i])
 
@@ -138,13 +135,13 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
         x_21_D.append(D[index_x_21])
         x_21_T.append(T[index_x_21])
 
-        # multiple demand values every week within two months
-        index_x_22 = [i - 168, i - 336, i - 504, i - 672, i - 840, i - 1008, i - 1176, i - 1344]
+        # multiple demand values every week within one months
+        index_x_22 = [i - 168, i - 336, i - 504, i - 672]
         x_22_D.append(D[index_x_22])
         x_22_T.append(T[index_x_22])
 
         # multiple demand values every month within several months
-        index_x_23 = [i - 672, i - 1344, i - 2016]
+        index_x_23 = [i - 672, i - 1344, i - 2016, i-2688, i-3360, i-4032]
         x_23_D.append(D[index_x_23])
         x_23_T.append(T[index_x_23])
 
@@ -221,7 +218,7 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
     return (X_train, X_val, X_test, Y_train, Y_val, Y_test)
 
 
-# num_pre_days: the number of days we need before we can get the first sample, in this case: 3*28 days
+# num_pre_days: the number of days we need before we can get the first sample, in this case: 6*28 days
 num_pre_days = 84
 num_days = 1747
 num_test_days = 731
@@ -258,13 +255,13 @@ from keras.optimizers import SGD, adam
 
 def get_input(hour):
     input_Dd = Input(shape=(7,), name='input' + str(hour) + '_Dd')
-    input_Dw = Input(shape=(8,), name='input' + str(hour) + '_Dw')
-    input_Dm = Input(shape=(3,), name='input' + str(hour) + '_Dm')
+    input_Dw = Input(shape=(4,), name='input' + str(hour) + '_Dw')
+    input_Dm = Input(shape=(6,), name='input' + str(hour) + '_Dm')
     input_Dr = Input(shape=(24 - hour + 1,), name='input' + str(hour) + '_Dr')
 
     input_Td = Input(shape=(7,), name='input' + str(hour) + '_Td')
-    input_Tw = Input(shape=(8,), name='input' + str(hour) + '_Tw')
-    input_Tm = Input(shape=(3,), name='input' + str(hour) + '_Tm')
+    input_Tw = Input(shape=(4,), name='input' + str(hour) + '_Tw')
+    input_Tm = Input(shape=(6,), name='input' + str(hour) + '_Tm')
 
     input_T = Input(shape=(1,))
 
@@ -495,31 +492,31 @@ X_test_pred, Y_test_pred = get_XY(X_test, Y_test)
 
 
 def get_model():
-    model = Model(inputs=[input1_Dd, input1_Dw, input1_Dm, input1_Dr, input1_Td, input1_Tw, input1_Tm, input1_T, \
-                          input2_Dd, input2_Dw, input2_Dm, input2_Dr, input2_Td, input2_Tw, input2_Tm, input2_T, \
-                          input3_Dd, input3_Dw, input3_Dm, input3_Dr, input3_Td, input3_Tw, input3_Tm, input3_T, \
-                          input4_Dd, input4_Dw, input4_Dm, input4_Dr, input4_Td, input4_Tw, input4_Tm, input4_T, \
-                          input5_Dd, input5_Dw, input5_Dm, input5_Dr, input5_Td, input5_Tw, input5_Tm, input5_T, \
-                          input6_Dd, input6_Dw, input6_Dm, input6_Dr, input6_Td, input6_Tw, input6_Tm, input6_T, \
-                          input7_Dd, input7_Dw, input7_Dm, input7_Dr, input7_Td, input7_Tw, input7_Tm, input7_T, \
-                          input8_Dd, input8_Dw, input8_Dm, input8_Dr, input8_Td, input8_Tw, input8_Tm, input8_T, \
-                          input9_Dd, input9_Dw, input9_Dm, input9_Dr, input9_Td, input9_Tw, input9_Tm, input9_T, \
-                          input10_Dd, input10_Dw, input10_Dm, input10_Dr, input10_Td, input10_Tw, input10_Tm, input10_T, \
-                          input11_Dd, input11_Dw, input11_Dm, input11_Dr, input11_Td, input11_Tw, input11_Tm, input11_T, \
-                          input12_Dd, input12_Dw, input12_Dm, input12_Dr, input12_Td, input12_Tw, input12_Tm, input12_T, \
-                          input13_Dd, input13_Dw, input13_Dm, input13_Dr, input13_Td, input13_Tw, input13_Tm, input13_T, \
-                          input14_Dd, input14_Dw, input14_Dm, input14_Dr, input14_Td, input14_Tw, input14_Tm, input14_T, \
-                          input15_Dd, input15_Dw, input15_Dm, input15_Dr, input15_Td, input15_Tw, input15_Tm, input15_T, \
-                          input16_Dd, input16_Dw, input16_Dm, input16_Dr, input16_Td, input16_Tw, input16_Tm, input16_T, \
-                          input17_Dd, input17_Dw, input17_Dm, input17_Dr, input17_Td, input17_Tw, input17_Tm, input17_T, \
-                          input18_Dd, input18_Dw, input18_Dm, input18_Dr, input18_Td, input18_Tw, input18_Tm, input18_T, \
-                          input19_Dd, input19_Dw, input19_Dm, input19_Dr, input19_Td, input19_Tw, input19_Tm, input19_T, \
-                          input20_Dd, input20_Dw, input20_Dm, input20_Dr, input20_Td, input20_Tw, input20_Tm, input20_T, \
-                          input21_Dd, input21_Dw, input21_Dm, input21_Dr, input21_Td, input21_Tw, input21_Tm, input21_T, \
-                          input22_Dd, input22_Dw, input22_Dm, input22_Dr, input22_Td, input22_Tw, input22_Tm, input22_T, \
-                          input23_Dd, input23_Dw, input23_Dm, input23_Dr, input23_Td, input23_Tw, input23_Tm, input23_T, \
-                          input24_Dd, input24_Dw, input24_Dm, input24_Dr, input24_Td, input24_Tw, input24_Tm, input24_T, \
-                          input_D_max, input_D_min, input_season, input_weekday, input_festival], \
+    model = Model(inputs=[input1_Dd, input1_Dw, input1_Dm, input1_Dr, input1_Td, input1_Tw, input1_Tm, input1_T,
+                          input2_Dd, input2_Dw, input2_Dm, input2_Dr, input2_Td, input2_Tw, input2_Tm, input2_T,
+                          input3_Dd, input3_Dw, input3_Dm, input3_Dr, input3_Td, input3_Tw, input3_Tm, input3_T,
+                          input4_Dd, input4_Dw, input4_Dm, input4_Dr, input4_Td, input4_Tw, input4_Tm, input4_T,
+                          input5_Dd, input5_Dw, input5_Dm, input5_Dr, input5_Td, input5_Tw, input5_Tm, input5_T,
+                          input6_Dd, input6_Dw, input6_Dm, input6_Dr, input6_Td, input6_Tw, input6_Tm, input6_T,
+                          input7_Dd, input7_Dw, input7_Dm, input7_Dr, input7_Td, input7_Tw, input7_Tm, input7_T,
+                          input8_Dd, input8_Dw, input8_Dm, input8_Dr, input8_Td, input8_Tw, input8_Tm, input8_T,
+                          input9_Dd, input9_Dw, input9_Dm, input9_Dr, input9_Td, input9_Tw, input9_Tm, input9_T,
+                          input10_Dd, input10_Dw, input10_Dm, input10_Dr, input10_Td, input10_Tw, input10_Tm, input10_T,
+                          input11_Dd, input11_Dw, input11_Dm, input11_Dr, input11_Td, input11_Tw, input11_Tm, input11_T,
+                          input12_Dd, input12_Dw, input12_Dm, input12_Dr, input12_Td, input12_Tw, input12_Tm, input12_T,
+                          input13_Dd, input13_Dw, input13_Dm, input13_Dr, input13_Td, input13_Tw, input13_Tm, input13_T,
+                          input14_Dd, input14_Dw, input14_Dm, input14_Dr, input14_Td, input14_Tw, input14_Tm, input14_T,
+                          input15_Dd, input15_Dw, input15_Dm, input15_Dr, input15_Td, input15_Tw, input15_Tm, input15_T,
+                          input16_Dd, input16_Dw, input16_Dm, input16_Dr, input16_Td, input16_Tw, input16_Tm, input16_T,
+                          input17_Dd, input17_Dw, input17_Dm, input17_Dr, input17_Td, input17_Tw, input17_Tm, input17_T,
+                          input18_Dd, input18_Dw, input18_Dm, input18_Dr, input18_Td, input18_Tw, input18_Tm, input18_T,
+                          input19_Dd, input19_Dw, input19_Dm, input19_Dr, input19_Td, input19_Tw, input19_Tm, input19_T,
+                          input20_Dd, input20_Dw, input20_Dm, input20_Dr, input20_Td, input20_Tw, input20_Tm, input20_T,
+                          input21_Dd, input21_Dw, input21_Dm, input21_Dr, input21_Td, input21_Tw, input21_Tm, input21_T,
+                          input22_Dd, input22_Dw, input22_Dm, input22_Dr, input22_Td, input22_Tw, input22_Tm, input22_T,
+                          input23_Dd, input23_Dw, input23_Dm, input23_Dr, input23_Td, input23_Tw, input23_Tm, input23_T,
+                          input24_Dd, input24_Dw, input24_Dm, input24_Dr, input24_Td, input24_Tw, input24_Tm, input24_T,
+                          input_D_max, input_D_min, input_season, input_weekday, input_festival],
                   outputs=[output])
     return model
 
@@ -541,6 +538,7 @@ NUM_REPEAT = 5
 NUM_SNAPSHOTS = 4
 NUM_TEST_DAYS = 731
 
+# 独立模型1
 TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
 if TRAIN:
     model.save_weights('model.h5')
@@ -554,120 +552,527 @@ if TRAIN:
         model.load_weights('model.h5')
         shuffle_weights(model)
 
-        history_1 = model.fit(X_train_fit, Y_train_fit, \
+        history_1 = model.fit(X_train_fit, Y_train_fit,
                               epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
 
-        model.save_weights('complete' + str(i + 1) + '1_weights.h5')
+        model.save_weights('complete' + str(i + 1) + '1_weights_1.h5')
         pred_1 = model.predict(X_test_pred)
         pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
 
-        history_2 = model.fit(X_train_fit, Y_train_fit, \
+        history_2 = model.fit(X_train_fit, Y_train_fit,
                               epochs=50, batch_size=BATCH_SIZE, validation_data=None)
 
-        model.save_weights('complete' + str(i + 1) + '2_weights.h5')
+        model.save_weights('complete' + str(i + 1) + '2_weights_1.h5')
         pred_2 = model.predict(X_test_pred)
         pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
 
-        history_3 = model.fit(X_train_fit, Y_train_fit, \
+        history_3 = model.fit(X_train_fit, Y_train_fit,
                               epochs=50, batch_size=BATCH_SIZE, validation_data=None)
 
-        model.save_weights('complete' + str(i + 1) + '3_weights.h5')
+        model.save_weights('complete' + str(i + 1) + '3_weights_1.h5')
         pred_3 = model.predict(X_test_pred)
         pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
 
-        history_4 = model.fit(X_train_fit, Y_train_fit, \
+        history_4 = model.fit(X_train_fit, Y_train_fit,
                               epochs=50, batch_size=BATCH_SIZE, validation_data=None)
 
-        model.save_weights('complete' + str(i + 1) + '4_weights.h5')
+        model.save_weights('complete' + str(i + 1) + '4_weights_1.h5')
         pred_4 = model.predict(X_test_pred)
         pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
 
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3,pred_eval_4])
-        history_list.append([history_1, history_2, history_3,history_4])
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
 
-    with h5py.File('results.h5', 'w') as h5f:
+    with h5py.File('results_1.h5', 'w') as h5f:
         h5f.create_dataset('pred_list', data=pred_list)
 
 p = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
 for i in range(NUM_REPEAT):
     for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights.h5')
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_1.h5')
         pred = model.predict(X_test_pred)
         p[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval = np.mean(p, axis=0)
+pred_eval1 = np.mean(p, axis=0)
+
+# 独立模型2
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model2.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model2.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_2.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_2.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_2.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_2.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_2.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p2 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_2.h5')
+        pred = model.predict(X_test_pred)
+        p2[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval2 = np.mean(p2, axis=0)
+
+# 独立模型三
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model3.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model3.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_3.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_3.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_3.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_3.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_3.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p3 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_3.h5')
+        pred = model.predict(X_test_pred)
+        p3[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval3 = np.mean(p3, axis=0)
+
+# 独立模型4
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model4.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model4.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_4.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_4.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_4.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_4.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_4.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p4 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_4.h5')
+        pred = model.predict(X_test_pred)
+        p4[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval4 = np.mean(p4, axis=0)
+
+# 独立模型5
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model5.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model5.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_5.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_5.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_5.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_5.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_5.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p5 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_5.h5')
+        pred = model.predict(X_test_pred)
+        p5[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval5 = np.mean(p5, axis=0)
+
+# 独立模型6
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model6.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model6.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_6.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_6.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_6.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_6.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_6.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p6 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_6.h5')
+        pred = model.predict(X_test_pred)
+        p6[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval6 = np.mean(p6, axis=0)
+
+# 独立模型7
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model7.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model7.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_7.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_7.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_7.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_7.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_7.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p7 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_7.h5')
+        pred = model.predict(X_test_pred)
+        p7[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval7 = np.mean(p7, axis=0)
+
+# 独立模型8
+TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
+if TRAIN:
+    model.save_weights('model8.h5')
+
+    mape_list = []
+    history_list = []
+    pred_list = []
+
+    BATCH_SIZE = 32
+    for i in range(NUM_REPEAT):
+        model.load_weights('model8.h5')
+        shuffle_weights(model)
+
+        history_1 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '1_weights_8.h5')
+        pred_1 = model.predict(X_test_pred)
+        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
+
+        history_2 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '2_weights_8.h5')
+        pred_2 = model.predict(X_test_pred)
+        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
+
+        history_3 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '3_weights_8.h5')
+        pred_3 = model.predict(X_test_pred)
+        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
+
+        history_4 = model.fit(X_train_fit, Y_train_fit,
+                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
+
+        model.save_weights('complete' + str(i + 1) + '4_weights_8.h5')
+        pred_4 = model.predict(X_test_pred)
+        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
+
+        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
+        history_list.append([history_1, history_2, history_3, history_4])
+
+    with h5py.File('results_8.h5', 'w') as h5f:
+        h5f.create_dataset('pred_list', data=pred_list)
+
+p8 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
+for i in range(NUM_REPEAT):
+    for j in range(NUM_SNAPSHOTS):
+        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_8.h5')
+        pred = model.predict(X_test_pred)
+        p8[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
+pred_eval8 = np.mean(p8, axis=0)
+pred_eval_list = [pred_eval1, pred_eval2, pred_eval3, pred_eval4, pred_eval5, pred_eval6, pred_eval7, pred_eval8]
+pred_eval = np.mean(pred_eval_list, axis=0)
+
 Y_test_eval = np.array(Y_test).transpose().reshape(24 * NUM_TEST_DAYS)
 mape = np.mean(np.divide(np.abs(Y_test_eval - pred_eval), Y_test_eval))
+mae = np.mean(np.abs(Y_test_eval - pred_eval))
+rmse = np.sqrt(np.mean(np.square(pred_eval - Y_test_eval)))
 
-VAL = False  # only used for the plotting section hereafter
-# You can set the proportion of validation data in the training phase
-# or split the data into training and validation sets in advance
-
-if VAL:
-    def get_curve_data(history):
-        loss = []
-        val_loss = []
-        for history_item in history:
-            loss = loss + history_item.history['loss']
-            val_loss = val_loss + history_item.history['val_loss']
-        return (np.array(loss), np.array(val_loss))
+print('mape:')
+print(mape)
+print('mae:')
+print(mae)
+print('rmse:')
+print(rmse)
 
 
-    loss_list = []
-    val_loss_list = []
-    for history in history_list:
-        loss_once, val_loss_once = get_curve_data(history)
-        loss_list.append(loss_once)
-        val_loss_list.append(val_loss_once)
-
-    loss = np.array(loss_list)
-    val_loss = np.array(val_loss_list)
-
-    loss_mean = np.mean(loss, axis=0)
-    loss_std = np.std(loss, axis=0)
-    loss_up = loss_mean + loss_std
-    loss_down = loss_mean - loss_std
-
-    val_loss_mean = np.mean(val_loss, axis=0)
-    val_loss_std = np.std(val_loss, axis=0)
-    val_loss_up = val_loss_mean + val_loss_std
-    val_loss_down = val_loss_mean - val_loss_std
-
-    x = range(1350)
-
-    plt.figure(figsize=(6, 4))
-    plt.plot(x, loss_mean, color='Green')
-    plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-    plt.plot(val_loss_mean, color='RoyalBlue')
-    plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
-    plt.axis([200, 1350, 1, 2.5])
-    plt.show()
-else:
-
-    def get_curve_data(history):
-        loss = []
-        for history_item in history:
-            loss = loss + history_item.history['loss']
-        return (np.array(loss))
 
 
-    loss_list = []
-    for history in history_list:
-        loss_once = get_curve_data(history)
-        loss_list.append(loss_once)
-
-    print(history_list)
-
-    loss = np.array(loss_list)
-
-    loss_mean = np.mean(loss, axis=0)
-    loss_std = np.std(loss, axis=0)
-    loss_up = loss_mean + loss_std
-    loss_down = loss_mean - loss_std
-
-    x = range(1350)
-
-    plt.figure(figsize=(6, 4))
-    plt.plot(x, loss_mean, color='Green')
-    plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-    plt.axis([200, 1350, 1, 2.5])
-    plt.show()
+# VAL = False  # only used for the plotting section hereafter
+# # You can set the proportion of validation data in the training phase
+# # or split the data into training and validation sets in advance
+#
+# if VAL:
+#     def get_curve_data(history):
+#         loss = []
+#         val_loss = []
+#         for history_item in history:
+#             loss = loss + history_item.history['loss']
+#             val_loss = val_loss + history_item.history['val_loss']
+#         return (np.array(loss), np.array(val_loss))
+#
+#
+#     loss_list = []
+#     val_loss_list = []
+#     for history in history_list:
+#         loss_once, val_loss_once = get_curve_data(history)
+#         loss_list.append(loss_once)
+#         val_loss_list.append(val_loss_once)
+#
+#     loss = np.array(loss_list)
+#     val_loss = np.array(val_loss_list)
+#
+#     loss_mean = np.mean(loss, axis=0)
+#     loss_std = np.std(loss, axis=0)
+#     loss_up = loss_mean + loss_std
+#     loss_down = loss_mean - loss_std
+#
+#     val_loss_mean = np.mean(val_loss, axis=0)
+#     val_loss_std = np.std(val_loss, axis=0)
+#     val_loss_up = val_loss_mean + val_loss_std
+#     val_loss_down = val_loss_mean - val_loss_std
+#
+#     x = range(1350)
+#
+#     plt.figure(figsize=(6, 4))
+#     plt.plot(x, loss_mean, color='Green')
+#     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
+#     plt.plot(val_loss_mean, color='RoyalBlue')
+#     plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
+#     plt.axis([200, 1350, 1, 2.5])
+#     plt.show()
+# else:
+#
+#     def get_curve_data(history):
+#         loss = []
+#         for history_item in history:
+#             loss = loss + history_item.history['loss']
+#         return (np.array(loss))
+#
+#
+#     loss_list = []
+#     for history in history_list:
+#         loss_once = get_curve_data(history)
+#         loss_list.append(loss_once)
+#
+#     print(history_list)
+#
+#     loss = np.array(loss_list)
+#
+#     loss_mean = np.mean(loss, axis=0)
+#     loss_std = np.std(loss, axis=0)
+#     loss_up = loss_mean + loss_std
+#     loss_down = loss_mean - loss_std
+#
+#     x = range(1350)
+#
+#     plt.figure(figsize=(6, 4))
+#     plt.plot(x, loss_mean, color='Green')
+#     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
+#     plt.axis([200, 1350, 1, 2.5])
+#     plt.show()

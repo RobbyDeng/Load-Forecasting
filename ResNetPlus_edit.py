@@ -219,10 +219,10 @@ def data_split(D, T, D_max, D_min, season, weekday, festival, num_train_days, va
 
 
 # num_pre_days: the number of days we need before we can get the first sample, in this case: 6*28 days
-num_pre_days = 84
+num_pre_days = 168
 num_days = 1747
 num_test_days = 731
-num_train_days = 932
+num_train_days = 848
 num_data_points = num_days * 24
 num_days_start = num_days - num_pre_days - num_test_days - num_train_days
 start_data_point = num_days_start * 24

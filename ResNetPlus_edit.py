@@ -405,26 +405,28 @@ def get_res_layer(output, last=False):
     '''
     dense_res11 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
     dense_res12 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res11)
+    #
+    # dense_res21 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
+    # dense_res22 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res21)
+    #
+    # dense_res31 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
+    # dense_res32 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res31)
+    #
+    # dense_res41 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
+    # dense_res42 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res41)
 
-    dense_res21 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
-    dense_res22 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res21)
-
-    dense_res31 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
-    dense_res32 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res31)
-
-    dense_res41 = Dense(20, activation='selu', kernel_initializer='lecun_normal')(output)
-    dense_res42 = Dense(24, activation='linear', kernel_initializer='lecun_normal')(dense_res41)
-
-    dense_add = add([dense_res12, dense_res22, dense_res32, dense_res42])
+    # dense_add = add([dense_res12, dense_res22, dense_res32, dense_res42])
 
     if last:
-        output_new = add([dense_add, output], name='output')
+        output_new = add([dense_res12, output], name='output')
     else:
-        output_new = add([dense_add, output])
+        output_new = add([dense_res12, output])
     return output_new
 
 
 output_pre = concatenate(output_pre24)
+
+
 
 
 def resnetplus_layer(input_1, input_2, output_list):
@@ -489,6 +491,7 @@ def get_XY(X, Y):
 X_train_fit, Y_train_fit = get_XY(X_train, Y_train)
 X_val, Y_val = get_XY(X_val, Y_val)
 X_test_pred, Y_test_pred = get_XY(X_test, Y_test)
+
 
 
 def get_model():
@@ -592,401 +595,8 @@ for i in range(NUM_REPEAT):
         model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_1.h5')
         pred = model.predict(X_test_pred)
         p[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval1 = np.mean(p, axis=0)
+pred_eval = np.mean(p, axis=0)
 
-# 独立模型2
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model2.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model2.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_2.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_2.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_2.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_2.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_2.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p2 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_2.h5')
-        pred = model.predict(X_test_pred)
-        p2[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval2 = np.mean(p2, axis=0)
-
-# 独立模型三
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model3.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model3.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_3.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_3.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_3.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_3.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_3.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p3 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_3.h5')
-        pred = model.predict(X_test_pred)
-        p3[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval3 = np.mean(p3, axis=0)
-
-# 独立模型4
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model4.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model4.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_4.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_4.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_4.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_4.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_4.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p4 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_4.h5')
-        pred = model.predict(X_test_pred)
-        p4[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval4 = np.mean(p4, axis=0)
-
-# 独立模型5
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model5.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model5.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_5.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_5.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_5.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_5.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_5.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p5 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_5.h5')
-        pred = model.predict(X_test_pred)
-        p5[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval5 = np.mean(p5, axis=0)
-
-# 独立模型6
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model6.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model6.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_6.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_6.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_6.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_6.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_6.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p6 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_6.h5')
-        pred = model.predict(X_test_pred)
-        p6[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval6 = np.mean(p6, axis=0)
-
-# 独立模型7
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model7.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model7.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_7.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_7.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_7.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_7.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_7.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p7 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_7.h5')
-        pred = model.predict(X_test_pred)
-        p7[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval7 = np.mean(p7, axis=0)
-
-# 独立模型8
-TRAIN = 1  # set TRAIN to 0 if you already have the weights in the directory.
-if TRAIN:
-    model.save_weights('model8.h5')
-
-    mape_list = []
-    history_list = []
-    pred_list = []
-
-    BATCH_SIZE = 32
-    for i in range(NUM_REPEAT):
-        model.load_weights('model8.h5')
-        shuffle_weights(model)
-
-        history_1 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=1200, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '1_weights_8.h5')
-        pred_1 = model.predict(X_test_pred)
-        pred_eval_1 = pred_1.reshape(24 * NUM_TEST_DAYS)
-
-        history_2 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '2_weights_8.h5')
-        pred_2 = model.predict(X_test_pred)
-        pred_eval_2 = pred_2.reshape(24 * NUM_TEST_DAYS)
-
-        history_3 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '3_weights_8.h5')
-        pred_3 = model.predict(X_test_pred)
-        pred_eval_3 = pred_3.reshape(24 * NUM_TEST_DAYS)
-
-        history_4 = model.fit(X_train_fit, Y_train_fit,
-                              epochs=50, batch_size=BATCH_SIZE, validation_data=None)
-
-        model.save_weights('complete' + str(i + 1) + '4_weights_8.h5')
-        pred_4 = model.predict(X_test_pred)
-        pred_eval_4 = pred_4.reshape(24 * NUM_TEST_DAYS)
-
-        pred_list.append([pred_eval_1, pred_eval_2, pred_eval_3, pred_eval_4])
-        history_list.append([history_1, history_2, history_3, history_4])
-
-    with h5py.File('results_8.h5', 'w') as h5f:
-        h5f.create_dataset('pred_list', data=pred_list)
-
-p8 = np.zeros((NUM_REPEAT * NUM_SNAPSHOTS, 24 * NUM_TEST_DAYS))
-for i in range(NUM_REPEAT):
-    for j in range(NUM_SNAPSHOTS):
-        model.load_weights('complete' + str(i + 1) + str(j + 1) + '_weights_8.h5')
-        pred = model.predict(X_test_pred)
-        p8[i * NUM_SNAPSHOTS + j, :] = pred.reshape(24 * NUM_TEST_DAYS)
-pred_eval8 = np.mean(p8, axis=0)
-pred_eval_list = [pred_eval1, pred_eval2, pred_eval3, pred_eval4, pred_eval5, pred_eval6, pred_eval7, pred_eval8]
-pred_eval = np.mean(pred_eval_list, axis=0)
 
 Y_test_eval = np.array(Y_test).transpose().reshape(24 * NUM_TEST_DAYS)
 mape = np.mean(np.divide(np.abs(Y_test_eval - pred_eval), Y_test_eval))
@@ -1003,76 +613,76 @@ print(rmse)
 
 
 
-# VAL = False  # only used for the plotting section hereafter
-# # You can set the proportion of validation data in the training phase
-# # or split the data into training and validation sets in advance
-#
-# if VAL:
-#     def get_curve_data(history):
-#         loss = []
-#         val_loss = []
-#         for history_item in history:
-#             loss = loss + history_item.history['loss']
-#             val_loss = val_loss + history_item.history['val_loss']
-#         return (np.array(loss), np.array(val_loss))
-#
-#
-#     loss_list = []
-#     val_loss_list = []
-#     for history in history_list:
-#         loss_once, val_loss_once = get_curve_data(history)
-#         loss_list.append(loss_once)
-#         val_loss_list.append(val_loss_once)
-#
-#     loss = np.array(loss_list)
-#     val_loss = np.array(val_loss_list)
-#
-#     loss_mean = np.mean(loss, axis=0)
-#     loss_std = np.std(loss, axis=0)
-#     loss_up = loss_mean + loss_std
-#     loss_down = loss_mean - loss_std
-#
-#     val_loss_mean = np.mean(val_loss, axis=0)
-#     val_loss_std = np.std(val_loss, axis=0)
-#     val_loss_up = val_loss_mean + val_loss_std
-#     val_loss_down = val_loss_mean - val_loss_std
-#
-#     x = range(1350)
-#
-#     plt.figure(figsize=(6, 4))
-#     plt.plot(x, loss_mean, color='Green')
-#     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-#     plt.plot(val_loss_mean, color='RoyalBlue')
-#     plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
-#     plt.axis([200, 1350, 1, 2.5])
-#     plt.show()
-# else:
-#
-#     def get_curve_data(history):
-#         loss = []
-#         for history_item in history:
-#             loss = loss + history_item.history['loss']
-#         return (np.array(loss))
-#
-#
-#     loss_list = []
-#     for history in history_list:
-#         loss_once = get_curve_data(history)
-#         loss_list.append(loss_once)
-#
-#     print(history_list)
-#
-#     loss = np.array(loss_list)
-#
-#     loss_mean = np.mean(loss, axis=0)
-#     loss_std = np.std(loss, axis=0)
-#     loss_up = loss_mean + loss_std
-#     loss_down = loss_mean - loss_std
-#
-#     x = range(1350)
-#
-#     plt.figure(figsize=(6, 4))
-#     plt.plot(x, loss_mean, color='Green')
-#     plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
-#     plt.axis([200, 1350, 1, 2.5])
-#     plt.show()
+VAL = False  # only used for the plotting section hereafter
+# You can set the proportion of validation data in the training phase
+# or split the data into training and validation sets in advance
+
+if VAL:
+    def get_curve_data(history):
+        loss = []
+        val_loss = []
+        for history_item in history:
+            loss = loss + history_item.history['loss']
+            val_loss = val_loss + history_item.history['val_loss']
+        return (np.array(loss), np.array(val_loss))
+
+
+    loss_list = []
+    val_loss_list = []
+    for history in history_list:
+        loss_once, val_loss_once = get_curve_data(history)
+        loss_list.append(loss_once)
+        val_loss_list.append(val_loss_once)
+
+    loss = np.array(loss_list)
+    val_loss = np.array(val_loss_list)
+
+    loss_mean = np.mean(loss, axis=0)
+    loss_std = np.std(loss, axis=0)
+    loss_up = loss_mean + loss_std
+    loss_down = loss_mean - loss_std
+
+    val_loss_mean = np.mean(val_loss, axis=0)
+    val_loss_std = np.std(val_loss, axis=0)
+    val_loss_up = val_loss_mean + val_loss_std
+    val_loss_down = val_loss_mean - val_loss_std
+
+    x = range(1350)
+
+    plt.figure(figsize=(6, 4))
+    plt.plot(x, loss_mean, color='Green')
+    plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
+    plt.plot(val_loss_mean, color='RoyalBlue')
+    plt.fill_between(x, val_loss_up, val_loss_down, color='LightSkyBlue', alpha=0.7)
+    plt.axis([200, 1350, 0.5, 4])
+    plt.show()
+else:
+
+    def get_curve_data(history):
+        loss = []
+        for history_item in history:
+            loss = loss + history_item.history['loss']
+        return (np.array(loss))
+
+
+    loss_list = []
+    for history in history_list:
+        loss_once = get_curve_data(history)
+        loss_list.append(loss_once)
+
+    print(history_list)
+
+    loss = np.array(loss_list)
+
+    loss_mean = np.mean(loss, axis=0)
+    loss_std = np.std(loss, axis=0)
+    loss_up = loss_mean + loss_std
+    loss_down = loss_mean - loss_std
+
+    x = range(1350)
+
+    plt.figure(figsize=(6, 4))
+    plt.plot(x, loss_mean, color='Green')
+    plt.fill_between(x, loss_up, loss_down, color='LightGreen', alpha=0.7)
+    plt.axis([200, 1350, 1, 2.5])
+    plt.show()
